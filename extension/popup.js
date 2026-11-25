@@ -74,6 +74,8 @@ function renderCreateForm(container) {
       createdAt: new Date().toISOString(),
       totalUnits,
       completions: [],
+      trackedUrls: [],
+      countedUrls: [],
     };
 
     if (deadlineInput.value) {
@@ -96,6 +98,7 @@ function renderGoalDetails(container, goal) {
   const hours = hoursLeft(goal, now);
   const projected = projectedFinishDate(goal, now);
   const onTrack = isOnTrack(goal, now);
+  const trackedUrls = goal.trackedUrls || [];
 
   const header = document.createElement("div");
   header.className = "goal-header";
@@ -146,6 +149,8 @@ function renderGoalDetails(container, goal) {
         ...(currentGoal.completions || []),
         { completedAt: new Date().toISOString() },
       ],
+      trackedUrls: currentGoal.trackedUrls || [],
+      countedUrls: currentGoal.countedUrls || [],
     };
     await chrome.storage.local.set({ [GOAL_KEY]: updatedGoal });
     await renderGoal();
@@ -162,9 +167,51 @@ function renderGoalDetails(container, goal) {
   actions.appendChild(addUnitBtn);
   actions.appendChild(deleteBtn);
 
+  const tracking = document.createElement("div");
+  tracking.className = "tracking";
+
+  const trackBtn = document.createElement("button");
+  trackBtn.type = "button";
+  trackBtn.textContent = "Track this page";
+  trackBtn.addEventListener("click", async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tabUrl = tab?.url;
+    if (!tabUrl) {
+      return;
+    }
+
+    const data = await chrome.storage.local.get(GOAL_KEY);
+    const currentGoal = data[GOAL_KEY];
+    if (!currentGoal) {
+      return;
+    }
+
+    const currentTracked = currentGoal.trackedUrls || [];
+    if (currentTracked.includes(tabUrl)) {
+      return;
+    }
+
+    const updatedGoal = {
+      ...currentGoal,
+      trackedUrls: [...currentTracked, tabUrl],
+      countedUrls: currentGoal.countedUrls || [],
+    };
+
+    await chrome.storage.local.set({ [GOAL_KEY]: updatedGoal });
+    await renderGoal();
+  });
+
+  const trackedCount = document.createElement("div");
+  trackedCount.className = "meta";
+  trackedCount.textContent = `Tracked pages: ${trackedUrls.length}`;
+
+  tracking.appendChild(trackBtn);
+  tracking.appendChild(trackedCount);
+
   container.appendChild(header);
   container.appendChild(stats);
   container.appendChild(actions);
+  container.appendChild(tracking);
 }
 
 async function renderGoal() {
