@@ -2,7 +2,11 @@ const PAGES_KEY = "pages";
 const GOAL_KEY = "goal";
 
 setInterval(async () => {
-  const url = window.location.href;
+  if (!chrome.runtime?.id) return;
+  const url =
+    window.location.origin +
+    window.location.pathname +
+    window.location.search;
   const scrollableHeight =
     document.documentElement.scrollHeight - window.innerHeight;
   const scrollPercent =

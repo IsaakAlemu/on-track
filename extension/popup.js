@@ -175,10 +175,12 @@ function renderGoalDetails(container, goal) {
   trackBtn.textContent = "Track this page";
   trackBtn.addEventListener("click", async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const tabUrl = tab?.url;
-    if (!tabUrl) {
+    if (!tab?.url) {
       return;
     }
+
+    const parsed = new URL(tab.url);
+    const tabUrl = parsed.origin + parsed.pathname + parsed.search;
 
     const data = await chrome.storage.local.get(GOAL_KEY);
     const currentGoal = data[GOAL_KEY];
