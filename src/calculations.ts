@@ -1,4 +1,4 @@
-import { Goal } from "./types";
+import type { Goal } from "./types";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
